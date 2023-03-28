@@ -6,7 +6,7 @@ import psycopg2
 from dotenv import load_dotenv
 from os import getenv
 
-from .utils import (
+from utils import (
     extract_data,
     current_timestamp
 )
@@ -21,8 +21,10 @@ CORS(app, origins=["*"])
 try:
     conn = psycopg2.connect(database=getenv("database"), user=getenv("user"), password=getenv("password"), host=getenv("host"), port=getenv("port"))
     cur = conn.cursor()
+    print("DATABASE CONNECTION => SUCCESS!\n")
 except Exception as e:
-    print("DATABASE CONNECTION ERROR!")
+    print("DATABASE CONNECTION => ERROR!\n")
+    print(e)
 
 #------------------------------------------------------APIS START--------------------------------------------------------#
 @app.route('/parse_url', methods=['POST'])
@@ -39,12 +41,18 @@ def parse_url():
 
             # Store in PostgreSQL
             try:
-                cur.execute("INSERT INTO articles (url, title, author, pub_date, timestamp) VALUES (%s, %s, %s, %s, %s) "
-                            "ON CONFLICT (url) DO UPDATE SET title=EXCLUDED.title, author=EXCLUDED.author, pub_date=EXCLUDED.pub_date, timestamp=EXCLUDED.date",
-                            (raw_data['link'], raw_data['title'], raw_data['author'], raw_data['pub_date'], current_timestamp()))
+                # Check if this article exists in table or not
+                cur.execute("SELECT url FROM articles WHERE url = %s", (raw_data['link'],))
+                article = cur.fetchone()
+                if article is None:
+                    cur.execute("INSERT INTO articles (url, title, author, pub_date, timestamp) VALUES (%s, %s, %s, %s, %s)",
+                                (raw_data['link'], raw_data['title'], raw_data['author'], raw_data['pub_date'], current_timestamp()))
+                else:
+                    cur.execute("UPDATE articles SET title = %s, author = %s, pub_date = %s, timestamp = %s WHERE url = %s",
+                                (raw_data['title'], raw_data['author'], raw_data['pub_date'], current_timestamp(), raw_data['link']))
             except Exception as e:
                 conn.rollback()
-                error = "Database entry failure!"
+                error = f"Database entry failure!, => {e}"
             
             conn.commit()
             result = {
@@ -65,7 +73,7 @@ def parse_url():
 
 
 
-@app.route('/get_data/<int:id>', methods=['GET'])
+@app.route('/get_articles/<int:id>', methods=['GET'])
 def get_data(id):
     cur.execute("SELECT * FROM articles WHERE id = %s", (id,))
     data = cur.fetchone()
@@ -75,7 +83,7 @@ def get_data(id):
             "url": data[1],
             "title": data[2],
             "author": data[3],
-            "published_date": data[4].strftime("%Y-%m-%d %H:%M:%S")  # format date as string
+            "published_date": data[4]
         }
         return jsonify(result), 200
     else:
