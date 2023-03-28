@@ -6,7 +6,7 @@ import psycopg2
 from dotenv import load_dotenv
 from os import getenv
 
-from .utils import extract_data, current_timestamp
+from utils import extract_data, current_timestamp
 
 load_dotenv()
 
@@ -20,8 +20,8 @@ try:
         database=getenv("database"),
         user=getenv("user"),
         password=getenv("password"),
-        host=getenv("host"),
-        port=getenv("port"),
+        host=getenv("db_host"),
+        port=getenv("db_port"),
     )
     cur = conn.cursor()
     print("DATABASE CONNECTION => SUCCESS!\n")
@@ -121,5 +121,8 @@ def get_data(id):
 # ------------------------------------------------------APIS END--------------------------------------------------------#
 
 
-if __name__ == "__main__":
-    app.run(host= '0.0.0.0', debug=False) # Production 
+def main():
+    app.run(host="0.0.0.0", debug=False)  # Production
+
+
+main()

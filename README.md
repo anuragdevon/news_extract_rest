@@ -3,14 +3,14 @@
 This is a Python-based web scraper designed to extract and store information about articles from website. The application uses Flask and PostgreSQL to store the scraped data.
 
 ## Deployed URL
-https://newsextractrest-production.up.railway.app
+https://flask-production-b9ab.up.railway.app
+
 [![Deployed](https://img.shields.io/badge/deployed-yes-brightgreen)](https://your-application-url.com)
 
 ## Features
 
 - Parse Url and Store
 - Retrieve Details
-- 
 
 ## Requirements
 
