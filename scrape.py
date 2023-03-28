@@ -6,7 +6,7 @@ import psycopg2
 from dotenv import load_dotenv
 from os import getenv
 
-from utils import extract_data, current_timestamp
+from .utils import extract_data, current_timestamp
 
 load_dotenv()
 
