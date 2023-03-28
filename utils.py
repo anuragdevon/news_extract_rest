@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
+from datetime import datetime
 
 def extract_data(url: str) -> dict:
     results = {}

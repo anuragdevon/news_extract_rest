@@ -35,6 +35,11 @@ def parse_url():
             cur.execute("INSERT INTO your_table_name (url, title, author, pub_date) VALUES (%s, %s, %s, %s)",
                         (raw_data['link'], raw_data['title'], raw_data['author'], raw_data['pub_date']))
             conn.commit()
+
+            cur.execute("INSERT INTO articles (url, title, author, pub_date, date) VALUES (%s, %s, %s, %s, %s) "
+                        "ON CONFLICT (url) DO UPDATE SET title=EXCLUDED.title, author=EXCLUDED.author, pub_date=EXCLUDED.pub_date, date=EXCLUDED.date",
+                        (raw_data['link'], raw_data['title'], raw_data['author'], raw_data['pub_date'], today))
+            conn.commit()
             result = {
                 "message": "Data parsed and stored successfully!",
                 "output": {
