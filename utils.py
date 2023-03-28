@@ -24,3 +24,8 @@ def extract_data(url: str) -> dict:
         error = str(e)
 
     return results, error
+
+
+def current_timestamp():
+    timestamp = datetime.now()
+    return timestamp

@@ -6,7 +6,10 @@ import psycopg2
 from dotenv import load_dotenv
 from os import getenv
 
-from .utils import extract_data
+from .utils import (
+    extract_data,
+    current_timestamp
+)
 
 load_dotenv()
 
@@ -15,8 +18,11 @@ CORS(app)
 CORS(app, origins=["*"])
 
 # PostgreSQL connection
-conn = psycopg2.connect(database=getenv("database"), user=getenv("user"), password=getenv("password"), host=getenv("host"), port=getenv("port"))
-cur = conn.cursor()
+try:
+    conn = psycopg2.connect(database=getenv("database"), user=getenv("user"), password=getenv("password"), host=getenv("host"), port=getenv("port"))
+    cur = conn.cursor()
+except Exception as e:
+    print("DATABASE CONNECTION ERROR!")
 
 #------------------------------------------------------APIS START--------------------------------------------------------#
 @app.route('/parse_url', methods=['POST'])
@@ -31,23 +37,25 @@ def parse_url():
                 writer = csv.writer(csv_file)
                 writer.writerow(['', raw_data['link'], raw_data['title'], raw_data['author'], raw_data['pub_date']])
 
-            # # Store data in PostgreSQL
-            cur.execute("INSERT INTO your_table_name (url, title, author, pub_date) VALUES (%s, %s, %s, %s)",
-                        (raw_data['link'], raw_data['title'], raw_data['author'], raw_data['pub_date']))
-            conn.commit()
-
-            cur.execute("INSERT INTO articles (url, title, author, pub_date, date) VALUES (%s, %s, %s, %s, %s) "
-                        "ON CONFLICT (url) DO UPDATE SET title=EXCLUDED.title, author=EXCLUDED.author, pub_date=EXCLUDED.pub_date, date=EXCLUDED.date",
-                        (raw_data['link'], raw_data['title'], raw_data['author'], raw_data['pub_date'], today))
+            # Store in PostgreSQL
+            try:
+                cur.execute("INSERT INTO articles (url, title, author, pub_date, timestamp) VALUES (%s, %s, %s, %s, %s) "
+                            "ON CONFLICT (url) DO UPDATE SET title=EXCLUDED.title, author=EXCLUDED.author, pub_date=EXCLUDED.pub_date, timestamp=EXCLUDED.date",
+                            (raw_data['link'], raw_data['title'], raw_data['author'], raw_data['pub_date'], current_timestamp()))
+            except Exception as e:
+                conn.rollback()
+                error = "Database entry failure!"
+            
             conn.commit()
             result = {
                 "message": "Data parsed and stored successfully!",
+                "error": error,
                 "output": {
                     "title": raw_data["title"],
                     "url": raw_data["link"],
                     "author": raw_data["author"],
-                    "published_date": raw_data["pub_date"]
-                }
+                    "published_date": raw_data["pub_date"],
+                },
             }
             return jsonify(result), 200
         else:
@@ -59,7 +67,7 @@ def parse_url():
 
 @app.route('/get_data/<int:id>', methods=['GET'])
 def get_data(id):
-    cur.execute("SELECT * FROM your_table_name WHERE id = %s", (id,))
+    cur.execute("SELECT * FROM articles WHERE id = %s", (id,))
     data = cur.fetchone()
     if data:
         result = {
