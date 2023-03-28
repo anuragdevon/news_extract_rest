@@ -4,6 +4,7 @@ This is a Python-based web scraper designed to extract and store information abo
 
 ## Deployed URL
 https://newsextractrest-production.up.railway.app
+[![Deployed](https://img.shields.io/badge/deployed-yes-brightgreen)](https://your-application-url.com)
 
 ## Features
 
