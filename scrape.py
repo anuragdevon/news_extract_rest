@@ -36,20 +36,6 @@ def parse_url():
     if url:
         raw_data, error = extract_data(url)
         if error == "":
-            # Store data in CSV file
-            csv_filename = datetime.now().strftime("%d%m%Y") + "_verge.csv"
-            with open(csv_filename, mode="a", newline="") as csv_file:
-                writer = csv.writer(csv_file)
-                writer.writerow(
-                    [
-                        "",
-                        raw_data["link"],
-                        raw_data["title"],
-                        raw_data["author"],
-                        raw_data["pub_date"],
-                    ]
-                )
-
             # Store in PostgreSQL
             try:
                 # Check if this article exists in table or not
@@ -83,7 +69,29 @@ def parse_url():
                 conn.rollback()
                 error = f"Database entry failure!, => {e}"
 
-            conn.commit()
+            else:
+                conn.commit()
+
+                cur.execute(
+                    "SELECT * FROM articles WHERE url = %s", (raw_data["link"],)
+                )
+                article_stored = cur.fetchone()
+                article_stored_id = article_stored[0]
+                
+                # Store data in CSV file
+                csv_filename = datetime.now().strftime("%d%m%Y") + "_verge.csv"
+                with open(csv_filename, mode="a", newline="") as csv_file:
+                    writer = csv.writer(csv_file)
+                    writer.writerow(
+                        [
+                            article_stored_id,
+                            raw_data["link"],
+                            raw_data["title"],
+                            raw_data["author"],
+                            raw_data["pub_date"],
+                        ]
+                    )
+
             result = {
                 "message": "Data parsed and stored successfully!",
                 "error": error,
